@@ -1,0 +1,11 @@
+dist/
+.astro/
+node_modules/
+.env
+.env.*
+.DS_Store
+.vercel/
+.netlify/
+
+# Original resume (has home address and phone). The public copy is public/resume.pdf.
+/resume.pdf

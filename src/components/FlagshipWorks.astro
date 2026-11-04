@@ -1,0 +1,179 @@
+---
+import LancetGlass from './LancetGlass.astro';
+import Impact from './Impact.astro';
+import { projects } from '../data/projects';
+import { toRoman } from '../lib/roman';
+
+// Flagships keep their position in the full list, so numbering matches the detail pages.
+const flagships = projects
+  .map((project, index) => ({ project, index }))
+  .filter(({ project }) => project.flagship);
+---
+
+<section id="works" class="section flagships">
+  <div class="container">
+    <header class="section-head" data-reveal>
+      <span class="numeral">I.</span>
+      <h2>Selected Works</h2>
+      <p>Real problems, and the people now using what I built.</p>
+    </header>
+
+    <div class="list">
+      {
+        flagships.map(({ project: p, index }, n) => (
+          <article class:list={['flagship', { 'is-flipped': n % 2 === 1 }]}>
+            <a href={`/projects/${p.slug}/`} class="flagship__window" data-reveal aria-label={`Read about ${p.title}`}>
+              <LancetGlass seed={p.slug} hue={p.hue} transitionName={`glass-${p.slug}`} />
+            </a>
+
+            <div class="flagship__body" data-reveal style="--i:1">
+              <p class="eyebrow meta">
+                <span class="num">{toRoman(index + 1)}.</span>
+                {p.flagship!.for}
+              </p>
+              <h3 style={`view-transition-name:title-${p.slug}`}>
+                <a href={`/projects/${p.slug}/`}>{p.title}</a>
+              </h3>
+
+              <div class="story">
+                <div>
+                  <h4 class="eyebrow">The problem</h4>
+                  <p>{p.flagship!.problem}</p>
+                </div>
+                <div>
+                  <h4 class="eyebrow">What I built</h4>
+                  <p>{p.flagship!.solution}</p>
+                </div>
+              </div>
+
+              <Impact impact={p.flagship!.impact} />
+
+              <div class="foot">
+                <ul class="tags" aria-label="Technologies">
+                  {p.tags.slice(0, 5).map((t) => (
+                    <li>{t}</li>
+                  ))}
+                </ul>
+                <a href={`/projects/${p.slug}/`} class="text-link">
+                  Full story <span class="arrow" aria-hidden="true">→</span>
+                </a>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .list {
+    display: grid;
+    gap: clamp(6rem, 12vw, 10rem);
+  }
+
+  .flagship {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(3rem, 7vw, 7rem);
+    align-items: center;
+  }
+  .flagship.is-flipped {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  }
+  .flagship.is-flipped .flagship__window {
+    order: 2;
+    justify-self: end;
+  }
+
+  .flagship__window {
+    display: block;
+    width: 100%;
+    max-width: 26rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.7rem;
+    margin-bottom: 1.25rem;
+  }
+  .num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.2rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--gold);
+  }
+
+  h3 {
+    font-size: clamp(3rem, 6vw, 5rem);
+    letter-spacing: -0.02em;
+  }
+  h3 a {
+    transition: color 0.5s var(--ease);
+  }
+  h3 a:hover {
+    color: #fff;
+  }
+
+  .story {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+    margin-block: 2.25rem;
+  }
+  .story h4 {
+    font-family: var(--sans);
+    margin: 0 0 0.6rem;
+    color: var(--gold);
+  }
+  .story p {
+    color: var(--muted);
+    font-size: 0.98rem;
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    margin-top: 1.75rem;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  @media (max-width: 960px) {
+    .flagship,
+    .flagship.is-flipped {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2.5rem;
+    }
+    .flagship.is-flipped .flagship__window {
+      order: 0;
+      justify-self: start;
+    }
+    .flagship__window {
+      max-width: 20rem;
+    }
+  }
+  @media (max-width: 600px) {
+    .story {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+  }
+</style>

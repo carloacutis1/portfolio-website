@@ -1,0 +1,89 @@
+---
+import LancetGlass from './LancetGlass.astro';
+import type { Project } from '../data/projects';
+import { toRoman } from '../lib/roman';
+
+interface Props {
+  project: Project;
+  index: number;
+}
+
+const { project: p, index } = Astro.props;
+---
+
+<article class="pane" data-reveal style={`--i:${index % 3}`}>
+  <a href={`/projects/${p.slug}/`} class="pane__link">
+    <LancetGlass seed={p.slug} hue={p.hue} transitionName={`glass-${p.slug}`} />
+    <div class="pane__meta">
+      <span class="pane__num">{toRoman(index + 1)}.</span>
+      <span class="pane__rule" aria-hidden="true"></span>
+      <span class="pane__year">{p.year}</span>
+    </div>
+    <h3 class="pane__title" style={`view-transition-name:title-${p.slug}`}>{p.title}</h3>
+    <p class="pane__blurb">{p.blurb}</p>
+    <ul class="pane__tags" aria-label="Technologies">
+      {p.tags.slice(0, 4).map((t) => <li>{t}</li>)}
+    </ul>
+  </a>
+</article>
+
+<style>
+  .pane__link {
+    display: block;
+  }
+  .pane__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-top: 1.75rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .pane__num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--gold);
+  }
+  .pane__rule {
+    flex: 1;
+    height: 1px;
+    background: rgba(243, 237, 226, 0.1);
+    transform-origin: left;
+    transition: background-color 0.8s var(--ease);
+  }
+  .pane__link:hover .pane__rule {
+    background: var(--gold-soft);
+  }
+  .pane__title {
+    margin-top: 0.9rem;
+    font-size: clamp(2rem, 3.2vw, 2.6rem);
+    width: fit-content;
+    transition: transform 0.8s var(--ease);
+  }
+  .pane__link:hover .pane__title {
+    transform: translateX(0.35rem);
+  }
+  .pane__blurb {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-size: 0.98rem;
+    max-width: 26rem;
+  }
+  .pane__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    list-style: none;
+    margin: 1.1rem 0 0;
+    padding: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+</style>

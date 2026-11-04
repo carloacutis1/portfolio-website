@@ -1,0 +1,218 @@
+---
+import { site } from '../data/site';
+import { toRoman } from '../lib/roman';
+
+// A casino chip in the site's palette: ruby body, ivory edge inserts,
+// engraved gold detailing, lettering around the band, and a monogram inlay.
+// Drawn in a -100…100 box.
+
+const f = (n: number) => Math.round(n * 100) / 100;
+const polar = (r: number, deg: number) => {
+  const a = ((deg - 90) * Math.PI) / 180;
+  return `${f(r * Math.cos(a))} ${f(r * Math.sin(a))}`;
+};
+/** Annular sector between radii r1 < r2, from angle a1 to a2 (degrees, 0 = top). */
+const sector = (r1: number, r2: number, a1: number, a2: number) =>
+  `M${polar(r2, a1)}A${r2} ${r2} 0 0 1 ${polar(r2, a2)}L${polar(r1, a2)}A${r1} ${r1} 0 0 0 ${polar(r1, a1)}Z`;
+
+// Eight ivory edge inserts, each with three fine ruby stripes, like a real chip's edge spots.
+const INSERTS = 8;
+const inserts = Array.from({ length: INSERTS }, (_, k) => {
+  const mid = (k / INSERTS) * 360;
+  const half = 11;
+  return {
+    body: sector(79, 97.5, mid - half, mid + half),
+    stripes: [-5.5, 0, 5.5].map((o) => sector(81, 95.5, mid + o - 0.9, mid + o + 0.9)),
+    delay: 0.3 + k * 0.07,
+  };
+});
+
+// Fine engraved ticks between the inserts and the lettering band.
+const ticks = Array.from({ length: 96 }, (_, k) => {
+  const a = (k / 96) * 360;
+  const long = k % 4 === 0;
+  return { d: `M${polar(long ? 71.5 : 72.5, a)}L${polar(75.5, a)}`, long };
+});
+
+// Lettering around the band.
+const initials = site.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .join('')
+  .toUpperCase();
+const year = toRoman(new Date().getFullYear());
+const ring = `${site.name} ✦ ${site.role} ✦ ${year} ✦ `.toUpperCase();
+const TEXT_R = 60.5;
+const circumference = 2 * Math.PI * TEXT_R;
+---
+
+<div class="chip" aria-hidden="true">
+  <div class="chip__glow"></div>
+  <!-- A round chip's shadow looks the same at any angle, so it sits on a still layer
+       underneath; putting it on the spinning layer made the browser re-blur it every frame. -->
+  <div class="chip__shadow"></div>
+  <!-- The chip spins as an HTML layer, so the browser rotates a cached image instead of redrawing the SVG. -->
+  <div class="chip__spin">
+    <svg viewBox="-100 -100 200 200">
+      <defs>
+        <radialGradient id="chip-body" cx="0.42" cy="0.38" r="0.75">
+          <stop offset="0" stop-color="#8e1b30"></stop>
+          <stop offset="0.65" stop-color="#6a1224"></stop>
+          <stop offset="1" stop-color="#3e0913"></stop>
+        </radialGradient>
+        <radialGradient id="chip-inlay" cx="0.4" cy="0.35" r="0.8">
+          <stop offset="0" stop-color="#241a26"></stop>
+          <stop offset="1" stop-color="#0f0b12"></stop>
+        </radialGradient>
+        <linearGradient id="chip-ivory" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f6efdf"></stop>
+          <stop offset="1" stop-color="#d9ccb2"></stop>
+        </linearGradient>
+        <linearGradient id="chip-gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f2d48e"></stop>
+          <stop offset="0.5" stop-color="#d4a24c"></stop>
+          <stop offset="1" stop-color="#a8772a"></stop>
+        </linearGradient>
+        <path id="chip-text-path" d={`M0 ${-TEXT_R}A${TEXT_R} ${TEXT_R} 0 1 1 0 ${TEXT_R}A${TEXT_R} ${TEXT_R} 0 1 1 0 ${-TEXT_R}`}
+        ></path>
+      </defs>
+
+      <!-- Body and rim -->
+      <circle r="98" fill="url(#chip-body)" style="--d:0s"></circle>
+      <circle r="98" fill="none" stroke="url(#chip-gold)" stroke-width="1" style="--d:0.1s"></circle>
+
+      <!-- Edge inserts -->
+      {
+        inserts.map((ins) => (
+          <g style={`--d:${ins.delay}s`}>
+            <path d={ins.body} fill="url(#chip-ivory)" />
+            {ins.stripes.map((d) => (
+              <path d={d} fill="#6a1224" fill-opacity="0.85" />
+            ))}
+          </g>
+        ))
+      }
+
+      <!-- Engraved ring -->
+      <g stroke="url(#chip-gold)" stroke-linecap="round" style="--d:0.9s">
+        {ticks.map((t) => <path d={t.d} stroke-width={t.long ? 0.9 : 0.5} stroke-opacity={t.long ? 0.9 : 0.55} />)}
+      </g>
+      <circle r="77.5" fill="none" stroke="url(#chip-gold)" stroke-width="0.6" style="--d:0.9s"></circle>
+      <circle r="68.5" fill="none" stroke="url(#chip-gold)" stroke-width="0.8" style="--d:1s"></circle>
+
+      <!-- Lettering band -->
+      <text class="chip__ring" style="--d:1.15s" fill="url(#chip-gold)">
+        <textPath href="#chip-text-path" textLength={f(circumference)} lengthAdjust="spacing">{ring}</textPath>
+      </text>
+      <circle r="52.5" fill="none" stroke="url(#chip-gold)" stroke-width="0.8" style="--d:1.25s"></circle>
+
+      <!-- Inlay -->
+      <circle r="50" fill="url(#chip-inlay)" style="--d:1.3s"></circle>
+      <circle r="45" fill="none" stroke="url(#chip-gold)" stroke-width="0.4" stroke-dasharray="0.6 2.2" style="--d:1.4s"></circle>
+      <text class="chip__mono" y="1" fill="url(#chip-gold)" style="--d:1.5s">{initials}</text>
+      <g fill="url(#chip-gold)" style="--d:1.6s">
+        <path d="M0 -30.5l1.6 2.6-1.6 2.6-1.6-2.6z"></path>
+        <path d="M0 25.3l1.6 2.6-1.6 2.6-1.6-2.6z"></path>
+      </g>
+    </svg>
+  </div>
+  <!-- Gloss stays still while the chip turns beneath it. -->
+  <svg class="chip__sheen" viewBox="-100 -100 200 200">
+    <defs>
+      <radialGradient id="chip-sheen" cx="0.36" cy="0.28" r="0.75">
+        <stop offset="0" stop-color="#fff" stop-opacity="0.2"></stop>
+        <stop offset="0.45" stop-color="#fff" stop-opacity="0"></stop>
+        <stop offset="1" stop-color="#000" stop-opacity="0.3"></stop>
+      </radialGradient>
+    </defs>
+    <circle r="98" fill="url(#chip-sheen)"></circle>
+  </svg>
+</div>
+
+<style>
+  .chip {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  /* Warm candlelight behind the chip. */
+  .chip__glow {
+    position: absolute;
+    inset: -12%;
+    border-radius: 50%;
+    /* Soft gradient instead of a blur filter: blurs on animated layers are re-run every frame. */
+    background: radial-gradient(
+      circle,
+      rgba(155, 27, 48, 0.42) 0%,
+      rgba(155, 27, 48, 0.24) 30%,
+      rgba(212, 162, 76, 0.1) 48%,
+      transparent 68%
+    );
+    opacity: 0.6;
+    will-change: transform, opacity;
+    animation: glow 9s var(--ease-soft) infinite alternate;
+  }
+  svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .chip__spin {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+    animation: spin 240s linear infinite;
+  }
+  .chip__shadow {
+    position: absolute;
+    inset: 1%;
+    border-radius: 50%;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+  }
+  .chip__ring {
+    font-family: var(--serif);
+    font-size: 8.2px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .chip__mono {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 40px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    letter-spacing: -1px;
+  }
+
+  /* Pieces settle in one by one when the page loads. */
+  svg [style*='--d'] {
+    opacity: 0;
+    animation: settle 1.6s var(--ease) forwards;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes settle {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes glow {
+    from {
+      transform: scale(0.94);
+      opacity: 0.5;
+    }
+    to {
+      transform: scale(1.05);
+      opacity: 0.7;
+    }
+  }
+</style>

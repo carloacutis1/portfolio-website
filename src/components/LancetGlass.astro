@@ -1,0 +1,151 @@
+---
+import { lancet, glowColor, LANCET_PATH, LEAD, GOLD, type Hue } from '../lib/glass';
+
+interface Props {
+  seed: string;
+  hue: Hue;
+  /** Shared view-transition name so the window morphs between pages. */
+  transitionName?: string;
+  /** Start lit instead of waiting for the reveal. */
+  lit?: boolean;
+}
+
+const { seed, hue, transitionName, lit = false } = Astro.props;
+const { shards, rondel, cx, cy, r } = lancet(seed, hue);
+const id = `g-${seed.replace(/[^a-z0-9-]/gi, '')}`;
+const style = [`--glow:${glowColor[hue]}`, transitionName && `view-transition-name:${transitionName}`]
+  .filter(Boolean)
+  .join(';');
+---
+
+<div class:list={['lancet', { 'is-lit': lit }]} style={style} data-glass>
+  <div class="lancet__halo" aria-hidden="true"></div>
+  <div class="lancet__glass">
+    <svg viewBox="0 0 100 120" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0.28"></stop>
+          <stop offset="0.45" stop-color="#fff" stop-opacity="0"></stop>
+          <stop offset="1" stop-color="#000" stop-opacity="0.35"></stop>
+        </linearGradient>
+      </defs>
+      <g stroke={LEAD} stroke-width="1" stroke-linejoin="round">
+        {shards.map((s) => <path d={s.d} fill={s.fill} fill-opacity={s.opacity} />)}
+      </g>
+      <g class="rondel" stroke={LEAD} stroke-width="1.1" stroke-linejoin="round">
+        <circle cx={cx} cy={cy} r={r + 2.4} fill={LEAD}></circle>
+        {rondel.map((s) => <path d={s.d} fill={s.fill} fill-opacity={s.opacity} />)}
+        <circle cx={cx} cy={cy} r="4.2" fill={GOLD}></circle>
+      </g>
+      <!-- Mullion -->
+      <path d="M50 58V120" stroke={LEAD} stroke-width="2.2"></path>
+      <rect width="100" height="120" fill={`url(#${id}-sheen)`}></rect>
+    </svg>
+    <div class="lancet__glow" aria-hidden="true"></div>
+  </div>
+  <svg class="lancet__frame" viewBox="0 0 100 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d={LANCET_PATH} fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"
+    ></path>
+  </svg>
+</div>
+
+<style>
+  .lancet {
+    --mx: 50%;
+    --my: 35%;
+    position: relative;
+    aspect-ratio: 100 / 120;
+    width: 100%;
+    color: var(--gold-soft);
+    isolation: isolate;
+  }
+
+  .lancet__halo {
+    position: absolute;
+    inset: 12% 8% 4%;
+    z-index: -1;
+    background: var(--glow);
+    filter: blur(48px);
+    opacity: 0;
+    transition: opacity 1.6s var(--ease);
+  }
+
+  .lancet__glass {
+    position: absolute;
+    inset: 0;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' preserveAspectRatio='none'%3E%3Cpath d='M0 120V67A70 70 0 0 1 50 0A70 70 0 0 1 100 67V120Z'/%3E%3C/svg%3E")
+      center / 100% 100% no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' preserveAspectRatio='none'%3E%3Cpath d='M0 120V67A70 70 0 0 1 50 0A70 70 0 0 1 100 67V120Z'/%3E%3C/svg%3E")
+      center / 100% 100% no-repeat;
+    background: var(--nave);
+  }
+
+  .lancet__glass svg {
+    width: 100%;
+    height: 100%;
+    filter: saturate(0.15) brightness(0.42);
+    transition: filter 1.8s var(--ease);
+  }
+
+  .lancet__glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at var(--mx) var(--my),
+      rgba(255, 238, 205, 0.55),
+      rgba(255, 238, 205, 0.08) 32%,
+      transparent 55%
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0;
+    transition: opacity 0.7s var(--ease);
+  }
+
+  .lancet__frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    transition: color 0.8s var(--ease);
+  }
+
+  /* Lit: when revealed on scroll, or forced. */
+  :global(.is-visible) .lancet__glass svg,
+  .is-lit .lancet__glass svg {
+    filter: saturate(1) brightness(0.92);
+  }
+  :global(.is-visible) .lancet__halo,
+  .is-lit .lancet__halo {
+    opacity: 0.14;
+  }
+
+  /* Hover: the sun comes out. */
+  .lancet:hover .lancet__glass svg,
+  :global(a:focus-visible) .lancet__glass svg {
+    filter: saturate(1.15) brightness(1.12);
+  }
+  .lancet:hover .lancet__glow {
+    opacity: 1;
+  }
+  .lancet:hover .lancet__halo,
+  :global(a:focus-visible) .lancet__halo {
+    opacity: 0.32;
+  }
+  .lancet:hover {
+    color: var(--gold);
+  }
+
+  .rondel {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 2.4s var(--ease);
+  }
+  .lancet:hover .rondel {
+    transform: rotate(45deg);
+  }
+
+  :global(html:not(.js)) .lancet__glass svg {
+    filter: saturate(1) brightness(0.92);
+  }
+</style>

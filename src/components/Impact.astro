@@ -1,0 +1,53 @@
+---
+import type { Flagship } from '../data/projects';
+
+interface Props {
+  impact: Flagship['impact'];
+}
+
+const { impact } = Astro.props;
+---
+
+<dl class="impact">
+  {
+    impact.map((s) => (
+      <div class="stat">
+        <dt>{s.label}</dt>
+        <dd>{s.value}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .impact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding-block: 1.5rem;
+    border-block: 1px solid rgba(243, 237, 226, 0.08);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  /* Number shows above its label (label stays first in the markup for screen readers),
+     and numbers line up even when a label wraps. */
+  dd {
+    order: -1;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(1.9rem, 3.6vw, 3rem);
+    line-height: 1;
+    color: var(--gold);
+    /* Cormorant's default old-style figures make 0 look like o. */
+    font-variant-numeric: lining-nums;
+  }
+  dt {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+</style>

@@ -1,0 +1,259 @@
+---
+import Base from '../../layouts/Base.astro';
+import LancetGlass from '../../components/LancetGlass.astro';
+import Impact from '../../components/Impact.astro';
+import { projects, type Project } from '../../data/projects';
+import { site } from '../../data/site';
+import { toRoman } from '../../lib/roman';
+
+export function getStaticPaths() {
+  return projects.map((project, index) => ({
+    params: { slug: project.slug },
+    props: { project, index },
+  }));
+}
+
+interface Props {
+  project: Project;
+  index: number;
+}
+
+const { project: p, index } = Astro.props;
+const next = projects[(index + 1) % projects.length];
+const nextIndex = (index + 1) % projects.length;
+---
+
+<Base title={`${p.title} — ${site.name}`} description={p.blurb}>
+  <article class="detail container">
+    <div class="detail__window">
+      <LancetGlass seed={p.slug} hue={p.hue} transitionName={`glass-${p.slug}`} lit />
+    </div>
+
+    <div class="detail__body">
+      <a href="/#works" class="back text-link"><span class="arrow" aria-hidden="true">←</span> All works</a>
+
+      <p class="eyebrow meta">
+        <span class="num">{toRoman(index + 1)}.</span>
+        {[p.year, p.role].filter(Boolean).join(' · ')}
+      </p>
+
+      <h1 style={`view-transition-name:title-${p.slug}`}>{p.title}</h1>
+      <p class="lead">{p.blurb}</p>
+
+      {
+        p.flagship && (
+          <div class="flagship">
+            <p class="eyebrow for">{p.flagship.for}</p>
+            <div class="story">
+              <div>
+                <h2 class="eyebrow">The problem</h2>
+                <p>{p.flagship.problem}</p>
+              </div>
+              <div>
+                <h2 class="eyebrow">What I built</h2>
+                <p>{p.flagship.solution}</p>
+              </div>
+            </div>
+            <Impact impact={p.flagship.impact} />
+          </div>
+        )
+      }
+
+      <div class="prose">
+        {p.description.map((para) => <p>{para}</p>)}
+      </div>
+
+      <ul class="tags" aria-label="Technologies">
+        {p.tags.map((t) => <li>{t}</li>)}
+      </ul>
+
+      {
+        (p.links.live || p.links.repo) && (
+          <div class="links">
+            {p.links.live && (
+              <a href={p.links.live} class="text-link" target="_blank" rel="noopener noreferrer">
+                Visit live <span class="arrow" aria-hidden="true">↗</span>
+              </a>
+            )}
+            {p.links.repo && (
+              <a href={p.links.repo} class="text-link" target="_blank" rel="noopener noreferrer">
+                Source code <span class="arrow" aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
+        )
+      }
+
+      {
+        next.slug !== p.slug && (
+          <a href={`/projects/${next.slug}/`} class="next">
+            <span class="eyebrow">Next work</span>
+            <span class="next__title">
+              <span class="num">{toRoman(nextIndex + 1)}.</span> {next.title}
+              <span class="arrow" aria-hidden="true">→</span>
+            </span>
+          </a>
+        )
+      }
+    </div>
+  </article>
+</Base>
+
+<style>
+  .detail {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(3rem, 8vw, 8rem);
+    align-items: start;
+    padding-block: 8rem 7rem;
+    min-height: 100vh;
+  }
+  .detail__window {
+    position: sticky;
+    top: 7rem;
+    max-width: 30rem;
+  }
+
+  .detail__body {
+    padding-top: 1rem;
+    animation: rise 1.2s var(--ease) 0.15s both;
+  }
+  .back {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 3.5rem;
+  }
+  .back:hover .arrow {
+    transform: translateX(-0.3em);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: baseline;
+    margin-bottom: 1.5rem;
+  }
+  .num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--gold);
+  }
+  h1 {
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    letter-spacing: -0.025em;
+    width: fit-content;
+  }
+  .lead {
+    margin-top: 1.75rem;
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    line-height: 1.3;
+    max-width: 32rem;
+  }
+  .flagship {
+    margin-top: 2.5rem;
+    max-width: 38rem;
+  }
+  .for {
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+  }
+  .story {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+  .story h2 {
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    margin: 0 0 0.6rem;
+  }
+  .story p {
+    color: var(--muted);
+  }
+  @media (max-width: 600px) {
+    .story {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .prose {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+    max-width: 36rem;
+    color: var(--muted);
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 2.5rem 0 0;
+    padding: 0;
+  }
+  .tags li {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8rem;
+    border: 1px solid rgba(243, 237, 226, 0.1);
+    border-radius: 999px;
+    color: var(--muted);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+
+  .next {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 6rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(243, 237, 226, 0.08);
+  }
+  .next__title {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.1;
+  }
+  .next .arrow {
+    display: inline-block;
+    color: var(--gold);
+    transition: transform 0.6s var(--ease);
+  }
+  .next:hover .arrow {
+    transform: translateX(0.4em);
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .detail {
+      grid-template-columns: minmax(0, 1fr);
+      padding-top: 6.5rem;
+    }
+    .detail__window {
+      position: relative;
+      top: 0;
+      max-width: 18rem;
+    }
+    .back {
+      margin-bottom: 2rem;
+    }
+  }
+</style>

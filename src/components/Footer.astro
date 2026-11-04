@@ -1,0 +1,46 @@
+---
+import { site } from '../data/site';
+import { toRoman } from '../lib/roman';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <p>
+      <span class="cross" aria-hidden="true">✠</span>
+      © <span title={String(year)}>{toRoman(year)}</span>
+      {site.name}
+    </p>
+    {site.motto && <p class="motto">{site.motto}</p>}
+  </div>
+</footer>
+
+<style>
+  .footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(243, 237, 226, 0.06);
+    padding-block: 2.5rem;
+    font-size: 0.8rem;
+    color: var(--faint);
+  }
+  .footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cross {
+    color: var(--gold);
+    margin-right: 0.5rem;
+  }
+  .motto {
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    font-variant: small-caps;
+    letter-spacing: 0.14em;
+    text-transform: lowercase;
+  }
+</style>

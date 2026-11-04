@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+---
+
+<Base title={`Lost — ${site.name}`}>
+  <section class="lost container">
+    <p class="eyebrow">Error CDIV</p>
+    <h1>This page has wandered off.</h1>
+    <p class="muted">Even the lost sheep gets found. Let’s get you home.</p>
+    <a href="/" class="text-link">Return home <span class="arrow" aria-hidden="true">→</span></a>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    min-height: 100vh;
+    display: grid;
+    align-content: center;
+    gap: 1.5rem;
+  }
+  h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    max-width: 14ch;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .text-link {
+    width: fit-content;
+  }
+</style>

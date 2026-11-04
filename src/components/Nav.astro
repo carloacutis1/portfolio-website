@@ -1,0 +1,107 @@
+---
+import { site } from '../data/site';
+
+const links = [
+  { n: 'I', label: 'Works', href: '/#works' },
+  { n: 'II', label: 'About', href: '/#about' },
+  { n: 'III', label: 'Contact', href: '/#contact' },
+];
+---
+
+<header class="nav" data-nav>
+  <div class="nav__inner container">
+    <a href="/" class="nav__mark" aria-label={`${site.name} — home`}>
+      <span class="cross" aria-hidden="true">✠</span>
+      <span class="nav__name">{site.name}</span>
+    </a>
+    <nav aria-label="Primary">
+      <ul>
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href}>
+                <span class="n">{l.n}</span>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    transition:
+      background-color 0.6s var(--ease),
+      backdrop-filter 0.6s var(--ease),
+      border-color 0.6s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  .nav:global(.is-scrolled) {
+    background: rgba(13, 11, 16, 0.62);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border-color: rgba(243, 237, 226, 0.06);
+  }
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 4.5rem;
+  }
+  .nav__mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    letter-spacing: 0.01em;
+  }
+  .cross {
+    color: var(--gold);
+    font-size: 1.05rem;
+    transition: transform 1.2s var(--ease);
+  }
+  .nav__mark:hover .cross {
+    transform: rotate(90deg);
+  }
+  ul {
+    display: flex;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul a {
+    font-size: 0.8rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.4s var(--ease);
+  }
+  ul a:hover {
+    color: var(--candle);
+  }
+  .n {
+    font-family: var(--serif);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    font-size: 0.95rem;
+    color: var(--gold);
+    margin-right: 0.45rem;
+  }
+  @media (max-width: 560px) {
+    .nav__name {
+      display: none;
+    }
+    .n {
+      display: none;
+    }
+  }
+</style>

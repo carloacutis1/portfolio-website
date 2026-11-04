@@ -1,0 +1,89 @@
+---
+import { site } from '../data/site';
+---
+
+<section id="contact" class="section contact">
+  <div class="container">
+    <header class="section-head" data-reveal>
+      <span class="numeral">III.</span>
+      <h2>Contact</h2>
+    </header>
+
+    <a href={`mailto:${site.email}`} class="contact__email" data-reveal style="--i:1">
+      <span class="kicker">Have something worth building?</span>
+      <span class="address">{site.email}</span>
+    </a>
+
+    <ul class="contact__socials" data-reveal style="--i:2">
+      {
+        site.socials.map((s) => (
+          <li>
+            <a
+              href={s.href}
+              class="text-link"
+              target={s.href.startsWith('http') ? '_blank' : undefined}
+              rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            >
+              {s.label} <span class="arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .contact {
+    padding-bottom: clamp(7rem, 14vw, 12rem);
+  }
+  .contact__email {
+    display: inline-grid;
+    gap: 1rem;
+  }
+  .kicker {
+    color: var(--muted);
+  }
+  .address {
+    position: relative;
+    /* Inter, not the serif: Cormorant's old-style 0 is easy to misread as an o. */
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(1.6rem, 4.6vw, 3.75rem);
+    font-variant-numeric: lining-nums;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+    word-break: break-word;
+    background: linear-gradient(
+      100deg,
+      var(--candle) 0%,
+      var(--candle) 40%,
+      #e0475e 47%,
+      #4a8ae6 52%,
+      #3fc490 57%,
+      #f2d48e 62%,
+      var(--candle) 70%,
+      var(--candle) 100%
+    );
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    transition: background-position 1.6s var(--ease);
+  }
+  .contact__email:hover .address,
+  .contact__email:focus-visible .address {
+    background-position: 0% 0;
+  }
+
+  .contact__socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+    margin: 3.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.95rem;
+  }
+</style>

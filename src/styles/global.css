@@ -1,0 +1,317 @@
+/* ───────────────────────── Tokens ───────────────────────── */
+:root {
+  --nave: #0d0b10;
+  --nave-2: #15121a;
+  --nave-3: #1d1923;
+  --candle: #f3ede2;
+  --muted: #a8a094;
+  --faint: #6f685f;
+  --gold: #d4a24c;
+  --gold-soft: rgba(212, 162, 76, 0.35);
+
+  --ruby: #9b1b30;
+  --sapphire: #1f4e9c;
+  --emerald: #1d7a5a;
+  --amber: #d4a24c;
+  --amethyst: #6b3fa0;
+
+  --serif: 'Cormorant Garamond', 'Cormorant', Garamond, 'Times New Roman', serif;
+  --sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+  --max: 1240px;
+
+
+  color-scheme: dark;
+}
+
+/* Cross-document view transitions: pages melt into each other. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.6s;
+  animation-timing-function: var(--ease);
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--nave);
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: var(--nave-3) var(--nave);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--candle);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(107, 63, 160, 0.12), transparent 70%),
+    var(--nave);
+  /* Standard-height numbers everywhere: Cormorant's old-style figures make 0 look like o. */
+  font-variant-numeric: lining-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Film grain: the faint texture of old stone. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgba(212, 162, 76, 0.35);
+  color: var(--candle);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 200;
+  padding: 0.5rem 1rem;
+  background: var(--candle);
+  color: var(--nave);
+  transform: translateY(-200%);
+  transition: transform 0.3s var(--ease);
+}
+.skip-link:focus {
+  transform: none;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* ───────────────────────── Shared pieces ───────────────────────── */
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section {
+  padding-block: clamp(6rem, 14vw, 11rem);
+}
+
+.section-head {
+  display: grid;
+  gap: 1.25rem;
+  margin-bottom: clamp(3.5rem, 8vw, 6rem);
+  max-width: 44rem;
+}
+
+.section-head .numeral {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+.section-head h2 {
+  font-size: clamp(3rem, 7vw, 5.5rem);
+}
+
+.section-head p {
+  color: var(--muted);
+  max-width: 34rem;
+}
+
+.text-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  padding-block: 0.25em;
+  color: var(--candle);
+}
+.text-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.35;
+  transform-origin: right;
+  transition:
+    transform 0.6s var(--ease),
+    opacity 0.6s var(--ease);
+}
+.text-link:hover::after {
+  opacity: 1;
+  background: var(--gold);
+  animation: underline 0.7s var(--ease);
+}
+@keyframes underline {
+  0% { transform: scaleX(1); transform-origin: right; }
+  45% { transform: scaleX(0); transform-origin: right; }
+  55% { transform: scaleX(0); transform-origin: left; }
+  100% { transform: scaleX(1); transform-origin: left; }
+}
+
+.text-link .arrow {
+  transition: transform 0.5s var(--ease);
+}
+.text-link:hover .arrow {
+  transform: translateX(0.3em);
+}
+
+/* ───────────────────────── Light beam ─────────────────────────
+   One stack of shafts per jewel colour. Each is blurred once; scrolling only
+   changes opacity and transform, which the browser handles without repainting. */
+.beam {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.beam__shaft {
+  position: absolute;
+  top: -30vh;
+  left: 52vw;
+  width: 34vw;
+  min-width: 260px;
+  height: 170vh;
+  transform: rotate(24deg);
+  transform-origin: top center;
+  will-change: transform;
+}
+.beam__shaft--thin {
+  left: 30vw;
+  width: 14vw;
+  min-width: 120px;
+}
+.beam__shaft span {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  /* Soft edges from gradients, not a blur filter, so fading the beam costs nothing. */
+  background: linear-gradient(90deg, transparent 0%, var(--c) 35%, var(--c) 65%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 40%, transparent 88%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 40%, transparent 88%);
+  opacity: 0;
+  will-change: opacity;
+}
+.beam__shaft span:first-child {
+  opacity: var(--o, 0.2);
+  visibility: visible;
+}
+
+/* Click ripples: sits with the beam, behind the content. */
+.ripples {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ───────────────────────── Reveal ───────────────────────── */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 1.1s var(--ease),
+    transform 1.1s var(--ease);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ───────────────────────── Reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  @view-transition {
+    navigation: none;
+  }
+}
