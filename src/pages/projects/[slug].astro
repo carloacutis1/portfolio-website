@@ -63,6 +63,20 @@ const nextIndex = (index + 1) % projects.length;
         {p.description.map((para) => <p>{para}</p>)}
       </div>
 
+      {
+        p.embed && (
+          <figure class="embed">
+            <iframe src={p.embed} title={`Play ${p.title}`} loading="lazy" />
+            <figcaption>
+              <span>Click the board, then play with the arrow keys. On a phone, swipe.</span>
+              <a href={p.embed} class="text-link" target="_blank" rel="noopener">
+                Open full screen <span class="arrow" aria-hidden="true">↗</span>
+              </a>
+            </figcaption>
+          </figure>
+        )
+      }
+
       <ul class="tags" aria-label="Technologies">
         {p.tags.map((t) => <li>{t}</li>)}
       </ul>
@@ -186,6 +200,27 @@ const nextIndex = (index + 1) % projects.length;
     gap: 1.25rem;
     margin-top: 2.5rem;
     max-width: 36rem;
+    color: var(--muted);
+  }
+  .embed {
+    margin: 2.5rem 0 0;
+    max-width: 36rem;
+  }
+  .embed iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 6;
+    border: 1px solid rgba(243, 237, 226, 0.1);
+    border-radius: 6px;
+    background: var(--nave);
+  }
+  .embed figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-top: 0.9rem;
+    font-size: 0.85rem;
     color: var(--muted);
   }
   .tags {
