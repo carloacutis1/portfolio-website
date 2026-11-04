@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2048 — Henry Cooper</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <!-- game.js and style.css are copied unchanged from github.com/carloacutis1/2048.
+       embed.css / embed.js only adapt it for the portfolio (sizing + touch). -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="embed.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>2048</h1>
+    <p>Score: <span id="score">0</span></p>
+    <button onclick="newGame()">New Game</button>
+  </header>
+  <div id="grid"></div>
+  <p class="hint">Arrow keys or WASD to move · swipe on touch screens · Z to undo</p>
+  <script src="game.js"></script>
+  <script src="embed.js"></script>
+</body>
+</html>
