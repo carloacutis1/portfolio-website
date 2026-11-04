@@ -1,0 +1,90 @@
+#grid {
+  display: grid;
+  grid-template-columns: repeat(4, 200px);
+  gap: 8px;
+  margin-top: 20px;
+  background-color: #15121b;       /* near-black plum */
+  border: 2px solid #b8913f;       /* gold rim */
+  width: fit-content;
+  padding: 15px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cell {
+  width: 200px;
+  height: 200px;
+  background: #241d2c;             /* empty cell: dark violet */
+  color: #f3ead8;                  /* cream text by default */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  font-weight: bold;
+}
+
+/* low tiles: cream and parchment */
+.val-2 {
+  background-color: #f3ead8;
+  color: #2a1f2b;
+}
+
+.val-4 {
+  background-color: #e3cfa6;
+  color: #2a1f2b;
+}
+
+/* mid tiles: the purple, green and coral of the network lines */
+.val-8 {
+  background-color: #8f7ad6;
+}
+
+.val-16 {
+  background-color: #6a52b8;
+}
+
+.val-32 {
+  background-color: #3fa37a;
+}
+
+.val-64 {
+  background-color: #2a7a5a;
+}
+
+.val-128 {
+  background-color: #d9546a;
+}
+
+/* high tiles: the poker-chip burgundy */
+.val-256 {
+  background-color: #a8243a;
+}
+
+.val-512 {
+  background-color: #7e1a2c;
+}
+
+/* top tiles: gold */
+.val-1024 {
+  background-color: #c9a24a;
+  color: #2a1f2b;
+}
+
+.val-2048 {
+  background-color: #e0b85a;
+  color: #2a1f2b;
+  box-shadow: 0 0 24px #e0b85a99;
+}
+
+/* beyond 2048: dark centre with a gold rim, like the chip's middle */
+.val-4096 {
+  background-color: #2a2133;
+  color: #e0b85a;
+  box-shadow: inset 0 0 0 4px #c9a24a;
+}
+
+.val-8192 {
+  background-color: #7e1a2c;
+  color: #e0b85a;
+  box-shadow: inset 0 0 0 4px #c9a24a;
+}

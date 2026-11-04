@@ -1,0 +1,78 @@
+/* Portfolio overrides: make the board fit any window (including the
+   iframe on the project page) and match the site's colours. */
+
+:root {
+  /* each cell is at most 200px, and shrinks to fit the window's width and height */
+  --cell: min(200px, calc((100vw - 64px) / 4), calc((100vh - 150px) / 4));
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #0d0b10;
+  color: #f3ede2;
+  font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.bar {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+}
+.bar h1 {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Garamond, 'Times New Roman', serif;
+  font-weight: 500;
+  font-size: 2rem;
+  color: #d4a24c;
+}
+.bar p {
+  margin: 0;
+  color: #a8a094;
+}
+.bar button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid #d4a24c;
+  border-radius: 999px;
+  background: transparent;
+  color: #f3ede2;
+  cursor: pointer;
+}
+.bar button:hover {
+  background: rgba(212, 162, 76, 0.15);
+}
+
+#grid {
+  grid-template-columns: repeat(4, var(--cell));
+  gap: calc(var(--cell) * 0.04);
+  padding: calc(var(--cell) * 0.075);
+  margin-top: 14px;
+  touch-action: none; /* swipes move tiles instead of scrolling */
+  user-select: none;
+}
+
+.cell {
+  width: var(--cell);
+  height: var(--cell);
+  font-size: calc(var(--cell) * 0.32);
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  color: #6f685f;
+  text-align: center;
+}

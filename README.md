@@ -26,7 +26,7 @@ If you link to `/resume.pdf`, drop the file in `public/`.
 
 ## Deploy
 
-Live at **https://henryacooper.com**, hosted on Vercel and deployed from GitHub.
+Live at **https://www.henryacooper.com** (henryacooper.com redirects there), hosted on Vercel and deployed from GitHub.
 
 - Every push to `main` triggers a new deploy automatically.
 - The domain is registered at Porkbun. Its DNS records point to Vercel; use the exact values shown under Vercel → Project → Settings → Domains.

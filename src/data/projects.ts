@@ -25,6 +25,8 @@ export interface Project {
   hue: Hue;
   role?: string;
   links: { live?: string; repo?: string };
+  /** A playable demo page (usually under /public) shown in a frame on the detail page. */
+  embed?: string;
   flagship?: Flagship;
 }
 
@@ -200,5 +202,6 @@ export const projects: Project[] = [
     hue: 'sapphire',
     role: 'Personal project',
     links: { repo: 'https://github.com/carloacutis1/2048' },
+    embed: '/play/2048/index.html',
   },
 ];
