@@ -20,19 +20,23 @@ import { site } from '../data/site';
         }
       </div>
 
-      <aside class="about__skills" data-reveal style="--i:2">
-        {
-          site.skills.map((g) => (
-            <div class="skill-group">
-              <h3 class="eyebrow">{g.group}</h3>
-              <ul>
-                {g.items.map((s) => (
-                  <li>{s}</li>
-                ))}
-              </ul>
-            </div>
-          ))
-        }
+      <aside class="about__skills" data-reveal style="--i:2" aria-label="Skills">
+        <dl>
+          {
+            site.skills.map((g) => (
+              <div class="skill-group">
+                <dt class="eyebrow">{g.group}</dt>
+                <dd>
+                  <ul>
+                    {g.items.map((s) => (
+                      <li>{s}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
       </aside>
     </div>
   </div>
@@ -57,54 +61,44 @@ import { site } from '../data/site';
     line-height: 1.3;
     color: var(--candle);
   }
-  /* A whisper of the illuminated initial. */
-  .lead::first-letter {
-    float: left;
-    font-size: 3.4em;
-    line-height: 0.82;
-    padding: 0.06em 0.12em 0 0;
-    color: var(--gold);
-    font-style: italic;
-  }
 
-  .about__skills {
-    display: grid;
-    gap: 2.25rem;
-    padding-top: 0.5rem;
+  /* Skills: a quiet typeset list, one group per row between hairline rules. */
+  .about__skills dl {
+    margin: 0;
+    border-top: 1px solid rgba(243, 237, 226, 0.08);
   }
-  .about__skills h3 {
-    font-family: var(--sans);
-    margin-bottom: 1rem;
+  .skill-group {
+    padding-block: 1.25rem;
+    border-bottom: 1px solid rgba(243, 237, 226, 0.08);
+  }
+  .skill-group dt {
+    margin-bottom: 0.6rem;
+    color: var(--gold);
+    font-size: 0.68rem;
+  }
+  /* Separators sit before each item; the ones that wrap to the start of a line are
+     pushed into the clipped margin, so no line ever begins or ends with a dot. */
+  dd {
+    margin: 0;
+    overflow: hidden;
   }
   ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
     list-style: none;
     margin: 0;
     padding: 0;
+    margin-left: -1.4em;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--candle);
   }
-  li {
-    padding: 0.45rem 0.95rem;
-    font-size: 0.85rem;
-    border: 1px solid rgba(243, 237, 226, 0.1);
-    border-radius: 999px 999px 999px 999px;
-    background: linear-gradient(180deg, rgba(243, 237, 226, 0.04), rgba(243, 237, 226, 0.01));
-    transition:
-      border-color 0.5s var(--ease),
-      color 0.5s var(--ease),
-      box-shadow 0.5s var(--ease);
-  }
-  li:nth-child(5n + 1):hover { --c: var(--ruby); }
-  li:nth-child(5n + 2):hover { --c: var(--sapphire); }
-  li:nth-child(5n + 3):hover { --c: var(--emerald); }
-  li:nth-child(5n + 4):hover { --c: var(--amber); }
-  li:nth-child(5n + 5):hover { --c: var(--amethyst); }
-  li:hover {
-    border-color: var(--c);
-    box-shadow:
-      0 0 24px -6px var(--c),
-      inset 0 0 12px -4px var(--c);
+  li::before {
+    content: '·';
+    display: inline-block;
+    width: 1.4em;
+    text-align: center;
+    color: var(--faint);
   }
 
   @media (max-width: 860px) {

@@ -1,6 +1,6 @@
 ---
 import { site } from '../data/site';
-import { toRoman } from '../lib/roman';
+import { layoutRing, estimateWidth, RING_FONT, BAND_MID } from '../lib/chip-ring';
 
 // A casino chip in the site's palette: ruby body, ivory edge inserts,
 // engraved gold detailing, lettering around the band, and a monogram inlay.
@@ -40,10 +40,12 @@ const initials = site.name
   .map((w) => w[0])
   .join('')
   .toUpperCase();
-const year = toRoman(new Date().getFullYear());
-const ring = `${site.name} ✦ ${site.role} ✦ ${year} ✦ `.toUpperCase();
-const TEXT_R = 60.5;
-const circumference = 2 * Math.PI * TEXT_R;
+const phrases = [site.name, site.role, String(new Date().getFullYear())].map((p) => p.toUpperCase());
+// Estimated here; the script below re-measures once the font has loaded.
+const ring = layoutRing(
+  phrases.map((p) => estimateWidth(p)),
+  phrases.map((p) => p.length),
+);
 ---
 
 <div class="chip" aria-hidden="true">
@@ -73,8 +75,7 @@ const circumference = 2 * Math.PI * TEXT_R;
           <stop offset="0.5" stop-color="#d4a24c"></stop>
           <stop offset="1" stop-color="#a8772a"></stop>
         </linearGradient>
-        <path id="chip-text-path" d={`M0 ${-TEXT_R}A${TEXT_R} ${TEXT_R} 0 1 1 0 ${TEXT_R}A${TEXT_R} ${TEXT_R} 0 1 1 0 ${-TEXT_R}`}
-        ></path>
+        <path id="chip-text-path" d={ring.path}></path>
       </defs>
 
       <!-- Body and rim -->
@@ -101,15 +102,29 @@ const circumference = 2 * Math.PI * TEXT_R;
       <circle r="68.5" fill="none" stroke="url(#chip-gold)" stroke-width="0.8" style="--d:1s"></circle>
 
       <!-- Lettering band -->
-      <text class="chip__ring" style="--d:1.15s" fill="url(#chip-gold)">
-        <textPath href="#chip-text-path" textLength={f(circumference)} lengthAdjust="spacing">{ring}</textPath>
-      </text>
+      <g class="chip__ring" style={`--d:1.15s;letter-spacing:${ring.tracking}px`} fill="url(#chip-gold)">
+        {
+          phrases.map((p, i) => (
+            <text>
+              <textPath href="#chip-text-path" startOffset={ring.offsets[i]}>
+                {p}
+              </textPath>
+            </text>
+          ))
+        }
+        {
+          ring.diamonds.map((a) => (
+            <path class="chip__diamond" d={`M0 ${-BAND_MID - 2.4}l1.6 2.4-1.6 2.4-1.6-2.4z`} transform={`rotate(${a})`} />
+          ))
+        }
+      </g>
       <circle r="52.5" fill="none" stroke="url(#chip-gold)" stroke-width="0.8" style="--d:1.25s"></circle>
 
       <!-- Inlay -->
       <circle r="50" fill="url(#chip-inlay)" style="--d:1.3s"></circle>
       <circle r="45" fill="none" stroke="url(#chip-gold)" stroke-width="0.4" stroke-dasharray="0.6 2.2" style="--d:1.4s"></circle>
-      <text class="chip__mono" y="1" fill="url(#chip-gold)" style="--d:1.5s">{initials}</text>
+      <!-- Placed by the script below so the letters' ink, not their em box, sits dead centre. -->
+      <text class="chip__mono" x="-25.2" y="12.4" fill="url(#chip-gold)" style="--d:1.5s">{initials}</text>
       <g fill="url(#chip-gold)" style="--d:1.6s">
         <path d="M0 -30.5l1.6 2.6-1.6 2.6-1.6-2.6z"></path>
         <path d="M0 25.3l1.6 2.6-1.6 2.6-1.6-2.6z"></path>
@@ -173,17 +188,14 @@ const circumference = 2 * Math.PI * TEXT_R;
   }
   .chip__ring {
     font-family: var(--serif);
-    font-size: 8.2px;
+    font-size: 9px;
     font-weight: 500;
-    letter-spacing: 0.5px;
+    text-anchor: middle;
   }
   .chip__mono {
     font-family: var(--serif);
     font-style: italic;
     font-size: 40px;
-    text-anchor: middle;
-    dominant-baseline: middle;
-    letter-spacing: -1px;
   }
 
   /* Pieces settle in one by one when the page loads. */
@@ -216,3 +228,47 @@ const circumference = 2 * Math.PI * TEXT_R;
     }
   }
 </style>
+
+<script>
+  import { layoutRing } from '../lib/chip-ring';
+
+  // Re-centre the lettering and monogram with the real font metrics.
+  async function fit(chip: SVGSVGElement) {
+    const ring = chip.querySelector<SVGGElement>('.chip__ring');
+    const mono = chip.querySelector<SVGTextElement>('.chip__mono');
+    if (!ring || !mono) return;
+    const styles = getComputedStyle(ring);
+    const monoStyles = getComputedStyle(mono);
+    await Promise.all([
+      document.fonts.load(`${styles.fontWeight} 16px ${styles.fontFamily}`),
+      document.fonts.load(`italic ${monoStyles.fontWeight} 16px ${monoStyles.fontFamily}`),
+    ]);
+
+    // Lettering: measure each phrase without tracking, then lay the ring out again.
+    const texts = [...ring.querySelectorAll('text')];
+    ring.style.letterSpacing = '0px';
+    const widths = texts.map((t) => t.getComputedTextLength());
+    const counts = texts.map((t) => [...(t.textContent ?? '')].length);
+    const layout = layoutRing(widths, counts);
+    ring.style.letterSpacing = `${layout.tracking}px`;
+    chip.querySelector('#chip-text-path')?.setAttribute('d', layout.path);
+    texts.forEach((t, i) => t.querySelector('textPath')?.setAttribute('startOffset', String(layout.offsets[i])));
+    ring.querySelectorAll('.chip__diamond').forEach((d, i) => d.setAttribute('transform', `rotate(${layout.diamonds[i]})`));
+
+    // Monogram: centre the visible ink of the letters (italics lean, so the box isn't enough).
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) return;
+    const size = parseFloat(monoStyles.fontSize);
+    const scale = 400 / size; // measure big for precision
+    ctx.font = `italic ${monoStyles.fontWeight} 400px ${monoStyles.fontFamily}`;
+    const m = ctx.measureText(mono.textContent ?? '');
+    const left = -m.actualBoundingBoxLeft / scale;
+    const right = m.actualBoundingBoxRight / scale;
+    const top = -m.actualBoundingBoxAscent / scale;
+    const bottom = m.actualBoundingBoxDescent / scale;
+    mono.setAttribute('x', String(-(left + right) / 2));
+    mono.setAttribute('y', String(-(top + bottom) / 2));
+  }
+
+  document.querySelectorAll<SVGSVGElement>('.chip__spin svg').forEach((svg) => void fit(svg));
+</script>

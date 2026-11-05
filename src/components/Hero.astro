@@ -1,9 +1,8 @@
 ---
 import PokerChip from './PokerChip.astro';
 import { site } from '../data/site';
-import { toRoman } from '../lib/roman';
 
-const year = toRoman(new Date().getFullYear());
+const year = new Date().getFullYear();
 const words = site.name.split(' ');
 ---
 
