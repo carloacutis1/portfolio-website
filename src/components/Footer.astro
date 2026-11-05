@@ -1,6 +1,5 @@
 ---
 import { site } from '../data/site';
-import { toRoman } from '../lib/roman';
 
 const year = new Date().getFullYear();
 ---
@@ -9,7 +8,7 @@ const year = new Date().getFullYear();
   <div class="container footer__inner">
     <p>
       <span class="cross" aria-hidden="true">✠</span>
-      © <span title={String(year)}>{toRoman(year)}</span>
+      © {year}
       {site.name}
     </p>
     {site.motto && <p class="motto">{site.motto}</p>}
