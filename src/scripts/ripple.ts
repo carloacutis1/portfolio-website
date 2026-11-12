@@ -1,17 +1,16 @@
 // A faint, irregular leaded-glass lattice lies behind the whole site.
-// Clicking blank space drops a stone in it: an uneven wave travels outward through
-// the lattice, lifting the lead lines a few pixels and lighting them in a jewel tone,
-// then the surface settles back.
+// Clicking blank space drops a stone: smooth rings spread outward like a pond,
+// carrying a ring of rose-window foils with them, then fade.
 //
 // Performance: two canvases. The resting lattice is drawn once into an offscreen image
 // covering a few screens of the page and copied onto the bottom canvas only when you
-// scroll. Waves draw on a transparent top canvas, and each frame only clears and redraws
-// the box around the live ripples, so a splash touches as few pixels as possible.
+// scroll. The rings draw on a transparent top canvas as plain arcs, which the browser
+// renders cheaply and smoothly at any speed.
 
 const JEWELS = ['#e0475e', '#4a8ae6', '#3fc490', '#a87fe0', '#e6b85c'];
 const GOLD = '#e6b85c';
 
-/* ── Tuning ─────────────────────────────────────────────────── */
+/* ── Lattice ────────────────────────────────────────────────── */
 const CELL_W = 46; // average width of one pane
 const CELL_H = 62; // average height of one pane
 const JITTER_X = 0.6; // how far joints wander sideways (fraction of CELL_W)
@@ -20,24 +19,16 @@ const MISSING = 0.16; // share of lead lines left out, so some panes merge
 const BASE_LINE = 'rgba(243,237,226,0.05)'; // resting lead lines
 const BASE_DOT = 'rgba(212,162,76,0.14)'; // resting joints
 const DOT_SHARE = 0.4; // share of joints that show a dot at rest
-const REACH = 640; // px a splash spreads before it dies out
-const DURATION = 4.5; // seconds a single ring takes to spread and fade
-const FADE_IN = 0.35; // seconds each ring takes to rise, so nothing pops on
-const BANDS = [
-  { delay: 0, strength: 1 },
-  { delay: 0.45, strength: 0.55 },
-  { delay: 0.9, strength: 0.28 },
-]; // a ripple train: each ring follows the last, softer, like water
-const WOBBLE = 0.12; // how uneven the wavefront gets (0 = perfect circle)
-const RAGGED = 8; // px of per-joint randomness in when the wave arrives
-const LIFT = 4; // px the wave pushes the lattice outward
-const MAX_RIPPLES = 10;
-const LEVELS = 40; // brightness steps for batching; fine enough to look continuous
 
-/** Water slows as it spreads: fast at first, gliding to a stop. */
+/* ── Splash ─────────────────────────────────────────────────── */
+const DURATION = 1.9; // seconds for one ring to fully spread
+const RING_GAP = 0.16; // seconds between the rings of one splash
+const RINGS = 3;
+const FOILS = 16;
+const MAX_RIPPLES = 12;
+const LIFETIME = DURATION + RING_GAP * (RINGS - 1);
+
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-const smooth = (t: number) => t * t * (3 - 2 * t);
-const LAST_BAND = BANDS[BANDS.length - 1].delay;
 
 /** Clicks on these aren't "blank space". */
 const INTERACTIVE = [
@@ -85,23 +76,19 @@ interface Ripple {
   x: number; // page coordinates, so a splash stays put while you scroll
   y: number;
   start: number;
-  color: number; // index into JEWELS
-  phase: [number, number, number]; // shape of this splash's uneven front
+  maxR: number;
+  color: string;
+  spin: number;
 }
 
 function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
-
-// Precomputed styles for each brightness step, so no strings are built per frame.
-const levelK = (l: number) => (l + 0.5) / LEVELS;
-const LINE_STYLES = JEWELS.map((hex) => {
+const rgba = (hex: string, a: number) => {
   const [r, g, b] = hexToRgb(hex);
-  return Array.from({ length: LEVELS }, (_, l) => `rgba(${r},${g},${b},${(0.7 * levelK(l)).toFixed(3)})`);
-});
-const [GR, GG, GB] = hexToRgb(GOLD);
-const DOT_STYLES = Array.from({ length: LEVELS }, (_, l) => `rgba(${GR},${GG},${GB},${(0.9 * levelK(l)).toFixed(3)})`);
+  return `rgba(${r},${g},${b},${a.toFixed(3)})`;
+};
 
 export function initRipples() {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -124,7 +111,6 @@ export function initRipples() {
   const ctx: CanvasRenderingContext2D = maybeCtx;
   const wctx: CanvasRenderingContext2D = maybeWctx;
   let lastSy = NaN; // scroll position the bottom canvas was last drawn at
-  let prevBox: [number, number, number, number] | null = null; // device-px area the waves last drew in
 
   // Offscreen image of the resting lattice, covering [cacheTop, cacheTop + cacheH) of the page.
   const cache = document.createElement('canvas');
@@ -138,27 +124,21 @@ export function initRipples() {
   let vw = 0;
   let vh = 0;
   const ripples: Ripple[] = [];
+  let wavesDrawn = false; // whether the top canvas has anything on it to clear
   let frame = 0;
-
-  // Scratch buffers for the joints near the viewport, reused every frame.
-  let px = new Float32Array(0);
-  let py = new Float32Array(0);
-  let pk = new Float32Array(0); // how strongly a wave is touching each joint (0–1)
-  let pc = new Int8Array(0); // colour of the wave touching it most (-1 = none)
 
   function requestDraw() {
     if (!frame) frame = requestAnimationFrame(draw);
   }
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     vw = window.innerWidth;
     vh = window.innerHeight;
     canvas.width = waveCanvas.width = Math.round(vw * dpr);
     canvas.height = waveCanvas.height = Math.round(vh * dpr);
     cacheValid = false;
     lastSy = NaN;
-    prevBox = null;
     requestDraw();
   }
 
@@ -218,195 +198,68 @@ export function initRipples() {
       lastSy = sy;
     }
 
-    // 2. Waves: wipe only what was drawn last frame.
-    wctx.setTransform(1, 0, 0, 1, 0, 0);
-    wctx.globalCompositeOperation = 'source-over';
-    if (prevBox) wctx.clearRect(...prevBox);
-    prevBox = null;
-
-    for (let r = ripples.length - 1; r >= 0; r--) {
-      if ((now - ripples[r].start) / 1000 > DURATION + LAST_BAND + 0.1) ripples.splice(r, 1);
+    // 2. Splashes.
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      if ((now - ripples[i].start) / 1000 > LIFETIME) ripples.splice(i, 1);
     }
-    if (!ripples.length) return;
+    if (!ripples.length && !wavesDrawn) return;
 
     wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const waves = ripples.map((rp) => {
-      const age = (now - rp.start) / 1000;
-      const grow = Math.min(1, age / DURATION);
-      return {
-        cx: rp.x,
-        cy: rp.y - sy,
-        color: rp.color,
-        phase: rp.phase,
-        wobble: WOBBLE * (0.25 + 0.75 * grow), // starts nearly round, gets more uneven as it spreads
-        bands: BANDS.map((b) => {
-          const local = age - b.delay;
-          const t = local / DURATION;
-          const clamped = Math.min(Math.max(t, 0), 1);
-          // Rise gently, then fade out smoothly as the ring loses energy.
-          const rise = smooth(Math.min(1, Math.max(0, local / FADE_IN)));
-          const fall = Math.pow(1 - smooth(clamped), 1.3);
-          return {
-            on: t > 0 && t < 1,
-            radius: 6 + REACH * easeOut(clamped),
-            width: 26 + 46 * clamped,
-            amp: b.strength * rise * fall,
-          };
-        }),
-      };
-    });
-
-    // The box (viewport px) that contains every live ring and glow.
-    let bx0 = Infinity;
-    let by0 = Infinity;
-    let bx1 = -Infinity;
-    let by1 = -Infinity;
-    for (const wave of waves) {
-      let reach = 110; // the landing glow
-      for (const band of wave.bands) {
-        if (band.on) reach = Math.max(reach, band.radius * (1 + wave.wobble) + band.width * 3);
-      }
-      reach += RAGGED + LIFT + 6;
-      bx0 = Math.min(bx0, wave.cx - reach);
-      by0 = Math.min(by0, wave.cy - reach);
-      bx1 = Math.max(bx1, wave.cx + reach);
-      by1 = Math.max(by1, wave.cy + reach);
-    }
-    bx0 = Math.max(0, bx0);
-    by0 = Math.max(0, by0);
-    bx1 = Math.min(vw, bx1);
-    by1 = Math.min(vh, by1);
-    if (bx1 <= bx0 || by1 <= by0) {
-      requestDraw(); // ripples scrolled out of view; keep time running
-      return;
-    }
-    const x0 = Math.floor((bx0 - 2) * dpr);
-    const y0 = Math.floor((by0 - 2) * dpr);
-    prevBox = [x0, y0, Math.ceil((bx1 + 2) * dpr) - x0, Math.ceil((by1 + 2) * dpr) - y0];
-
-    // Only joints inside the box are worked out.
-    const i0 = Math.floor(bx0 / CELL_W) - 2;
-    const j0 = Math.floor((sy + by0) / ROW_H) - 2;
-    const j1 = Math.ceil((sy + by1) / ROW_H) + 2;
-    const cols = Math.ceil(bx1 / CELL_W) + 2 - i0 + 1;
-    const rows = j1 - j0 + 1;
-    const n = rows * cols;
-    if (px.length < n) {
-      px = new Float32Array(n);
-      py = new Float32Array(n);
-      pk = new Float32Array(n);
-      pc = new Int8Array(n);
-    }
-
-    for (let row = 0; row < rows; row++) {
-      const j = j0 + row;
-      for (let col = 0; col < cols; col++) {
-        const i = i0 + col;
-        const idx = row * cols + col;
-        let x = jointX(i, j);
-        let y = jointY(i, j) - sy;
-        let k = 0;
-        let color = -1;
-        let bestK = 0;
-        const ragged = (hash(i, j, 5) - 0.5) * RAGGED;
-        for (const wave of waves) {
-          const dx = x - wave.cx;
-          const dy = y - wave.cy;
-          const d = Math.sqrt(dx * dx + dy * dy) || 1;
-          let shape = -1; // the front's radius multiplier at this angle, computed only if needed
-          for (const band of wave.bands) {
-            if (!band.on) continue;
-            // Cheap reject before doing any trig.
-            if (Math.abs(d - band.radius) > band.radius * WOBBLE * 1.2 + band.width * 3 + RAGGED) continue;
-            if (shape < 0) {
-              const a = Math.atan2(dy, dx);
-              const [p1, p2, p3] = wave.phase;
-              shape =
-                1 +
-                wave.wobble *
-                  (0.55 * Math.sin(3 * a + p1) + 0.3 * Math.sin(5 * a + p2) + 0.25 * Math.sin(2 * a + p3));
-            }
-            const u = (d + ragged - band.radius * shape) / band.width;
-            if (u < -3 || u > 3) continue;
-            const touch = Math.exp(-u * u) * band.amp;
-            // Crest pushes outward, trough pulls back in: reads as a real wave.
-            const lift = LIFT * touch * Math.sin(-u * 1.6 + 0.6);
-            x += (dx / d) * lift;
-            y += (dy / d) * lift;
-            k += touch;
-            if (touch > bestK) {
-              bestK = touch;
-              color = wave.color;
-            }
-          }
-        }
-        px[idx] = x;
-        py[idx] = y;
-        pk[idx] = k > 1 ? 1 : k;
-        pc[idx] = color;
-      }
-    }
-
-    // 3. Draw only the lit lines and joints, batched by colour and brightness.
-    const lit: (Path2D | undefined)[] = [];
-    const segment = (a: number, b: number) => {
-      const k = (pk[a] + pk[b]) / 2;
-      if (k < 0.012) return;
-      const c = pc[a] >= 0 ? pc[a] : pc[b];
-      if (c < 0) return;
-      const key = c * LEVELS + Math.min(LEVELS - 1, Math.floor(k * LEVELS));
-      const path = lit[key] ?? (lit[key] = new Path2D());
-      path.moveTo(px[a], py[a]);
-      path.lineTo(px[b], py[b]);
-    };
-    for (let row = 0; row < rows - 1; row++) {
-      const j = j0 + row;
-      const odd = j & 1;
-      for (let col = 0; col < cols; col++) {
-        const i = i0 + col;
-        const a = row * cols + col;
-        const left = col - 1 + odd;
-        const right = col + odd;
-        if (left >= 0 && hasLeft(i, j)) segment(a, (row + 1) * cols + left);
-        if (right < cols && hasRight(i, j)) segment(a, (row + 1) * cols + right);
-      }
-    }
-
-    const litDots: (Path2D | undefined)[] = [];
-    for (let idx = 0; idx < n; idx++) {
-      const k = pk[idx];
-      if (k < 0.03) continue;
-      const l = Math.min(LEVELS - 1, Math.floor(k * LEVELS));
-      const s = 1.2 + 1.4 * k;
-      const path = litDots[l] ?? (litDots[l] = new Path2D());
-      path.rect(px[idx] - s / 2, py[idx] - s / 2, s, s);
-    }
-
+    wctx.globalCompositeOperation = 'source-over';
+    wctx.clearRect(0, 0, vw, vh);
+    wavesDrawn = ripples.length > 0;
+    if (!wavesDrawn) return;
     wctx.globalCompositeOperation = 'lighter';
-    lit.forEach((path, key) => {
-      if (!path) return;
-      const l = key % LEVELS;
-      wctx.strokeStyle = LINE_STYLES[(key - l) / LEVELS][l];
-      wctx.lineWidth = 1 + 0.8 * levelK(l);
-      wctx.stroke(path);
-    });
-    litDots.forEach((path, l) => {
-      if (!path) return;
-      wctx.fillStyle = DOT_STYLES[l];
-      wctx.fill(path);
-    });
 
-    // A soft glow where the stone landed.
     for (const rp of ripples) {
-      const t = Math.min(1, (now - rp.start) / 1000 / (DURATION * 0.6));
+      const age = Math.max(0, (now - rp.start) / 1000);
       const cx = rp.x;
       const cy = rp.y - sy;
-      const gr = 24 + 80 * easeOut(t);
-      const glow = wctx.createRadialGradient(cx, cy, 0, cx, cy, gr);
-      glow.addColorStop(0, `rgba(${GR},${GG},${GB},${(0.18 * (1 - smooth(t))).toFixed(3)})`);
-      glow.addColorStop(1, `rgba(${GR},${GG},${GB},0)`);
+
+      // Soft glow where the stone landed.
+      const g = Math.min(1, age / DURATION);
+      const glowR = 30 + 90 * easeOut(g);
+      const glow = wctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+      glow.addColorStop(0, rgba(GOLD, 0.22 * (1 - g)));
+      glow.addColorStop(1, rgba(GOLD, 0));
       wctx.fillStyle = glow;
-      wctx.fillRect(cx - gr, cy - gr, gr * 2, gr * 2);
+      wctx.beginPath();
+      wctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+      wctx.fill();
+
+      // Concentric rings, each one a little later and fainter.
+      for (let k = 0; k < RINGS; k++) {
+        const t = (age - k * RING_GAP) / DURATION;
+        if (t <= 0 || t >= 1) continue;
+        const r = rp.maxR * easeOut(t) * (1 - k * 0.12);
+        const fade = Math.pow(1 - t, 1.6);
+        const color = k === 1 ? GOLD : rp.color;
+
+        wctx.lineWidth = (k === 0 ? 1.6 : 1.1) * (1 - t * 0.5);
+        wctx.strokeStyle = rgba(color, (k === 0 ? 0.75 : 0.45) * fade);
+        wctx.beginPath();
+        wctx.arc(cx, cy, r, 0, Math.PI * 2);
+        wctx.stroke();
+
+        // The first wave carries a ring of foils, like the rim of a rose window.
+        if (k === 0) {
+          const fr = r * 0.86;
+          const size = 1.2 + 2.6 * (1 - t);
+          const alpha = 0.8 * Math.pow(1 - t, 2);
+          for (const c of [rp.color, GOLD]) {
+            wctx.fillStyle = rgba(c, alpha);
+            wctx.beginPath();
+            for (let f = c === GOLD ? 1 : 0; f < FOILS; f += 2) {
+              const a = rp.spin + t * 0.35 + (f / FOILS) * Math.PI * 2;
+              const fx = cx + Math.cos(a) * fr;
+              const fy = cy + Math.sin(a) * fr;
+              wctx.moveTo(fx + size, fy);
+              wctx.arc(fx, fy, size, 0, Math.PI * 2);
+            }
+            wctx.fill();
+          }
+        }
+      }
     }
 
     requestDraw();
@@ -416,7 +269,7 @@ export function initRipples() {
   window.addEventListener('scroll', requestDraw, { passive: true });
   resize();
 
-  if (reduceMotion) return; // keep the still lattice, skip the waves
+  if (reduceMotion) return; // keep the still lattice, skip the splashes
 
   document.addEventListener('click', (e) => {
     if (e.button !== 0) return;
@@ -427,13 +280,13 @@ export function initRipples() {
     if (window.getSelection()?.toString()) return;
 
     if (ripples.length >= MAX_RIPPLES) ripples.shift();
-    const tau = Math.PI * 2;
     ripples.push({
       x: e.clientX,
       y: e.clientY + window.scrollY,
       start: performance.now(),
-      color: Math.floor(Math.random() * JEWELS.length),
-      phase: [Math.random() * tau, Math.random() * tau, Math.random() * tau],
+      maxR: 200 + Math.random() * 80,
+      color: JEWELS[Math.floor(Math.random() * JEWELS.length)],
+      spin: Math.random() * Math.PI * 2,
     });
     requestDraw();
   });
